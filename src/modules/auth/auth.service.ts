@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  HttpStatus,
-} from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { User } from '../user/schemas/user.schema';
@@ -83,24 +80,45 @@ export class AuthService {
 
   async login(loginUserDto: LoginUserDto) {
     const user = await this.userService.findByEmail(loginUserDto.email);
-    if (user && (await bcrypt.compare(loginUserDto.password, user.password))) {
-      if (!user.isEmailVerified) {
-        ExceptionHelper.getInstance().defaultError(
-          'Email is not verified. Please verify your email to log in.',
-          'email_not_verified',
-          HttpStatus.UNAUTHORIZED,
-        );
-      }
 
-      const { accessToken, refreshToken } = generateTokens(this.jwtService, {
-        email: user.email,
-        sub: user._id,
-      });
-      user.refreshToken = refreshToken;
-      await user.save();
-
-      return { access_token: accessToken, refresh_token: refreshToken };
+    if (!user) {
+      ExceptionHelper.getInstance().defaultError(
+        'email not found',
+        'email_not_found',
+        HttpStatus.NOT_FOUND,
+      );
     }
+
+    const passwordMatches = await bcrypt.compare(
+      loginUserDto.password,
+      user.password,
+    );
+
+    if (!passwordMatches) {
+      ExceptionHelper.getInstance().defaultError(
+        'Invalid email or password.',
+        'invalid_credentials',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!user.isEmailVerified) {
+      ExceptionHelper.getInstance().defaultError(
+        'Email is not verified. Please verify your email to log in.',
+        'email_not_verified',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const { accessToken, refreshToken } = generateTokens(this.jwtService, {
+      email: user.email,
+      sub: user._id,
+    });
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return { access_token: accessToken, refresh_token: refreshToken };
   }
 
   async validateGoogleUser(googleUser: CreateUserDto) {
@@ -174,14 +192,6 @@ export class AuthService {
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
     const payload = this.jwtService.verify(resetPasswordDto.token);
     const user = await this.userService.findByEmail(payload.email);
-
-    if (!user) {
-      ExceptionHelper.getInstance().defaultError(
-        'Invalid token.',
-        'invalid_token',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
 
     const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
     user.password = hashedPassword;

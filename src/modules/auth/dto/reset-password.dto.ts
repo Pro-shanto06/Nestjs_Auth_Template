@@ -5,6 +5,5 @@ export class ResetPasswordDto {
   token: string;
 
   @IsString()
-  @MinLength(6)
   newPassword: string;
 }

@@ -22,7 +22,7 @@ export class MailService {
   }
   
   async sendPasswordResetEmail(email: string, token: string) {
-    const resetUrl = `http://localhost:3000/reset-password?token=${token}`;
+    const resetUrl = `http://localhost:3000/auth/reset-password?token=${token}`;
     await this.transporter.sendMail({
       from: appConfig.emailUser,
       to: email,

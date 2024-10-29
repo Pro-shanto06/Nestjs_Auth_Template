@@ -76,7 +76,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsUrl()
   websiteUrl?: string;
-
-  @IsString()
-  googleId?: string;
 }
