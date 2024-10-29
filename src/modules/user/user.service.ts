@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { HttpStatus } from '@nestjs/common';
+import { ExceptionHelper } from '../../common/helpers/exception.helper';
 
 @Injectable()
 export class UserService {
@@ -30,7 +32,11 @@ export class UserService {
       .exec();
 
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
+      ExceptionHelper.getInstance().defaultError(
+        `User not found`,
+        'user_not_found',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     return user;
@@ -40,7 +46,11 @@ export class UserService {
     const result = await this.userModel.findByIdAndDelete(id).exec();
 
     if (!result) {
-      throw new NotFoundException(`User with id ${id} not found`);
+      ExceptionHelper.getInstance().defaultError(
+        `User not found`,
+        'user_not_found',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }

@@ -10,7 +10,7 @@ import { VerifySignupDto } from './dto/verify-signup.dto';
 import { generateTokens } from 'src/common/helpers/token.helper';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ExceptionHelper } from 'src/common/helpers/exception.helper';
+import { ExceptionHelper } from '../../common/helpers/exception.helper';
 
 @Injectable()
 export class AuthService {
