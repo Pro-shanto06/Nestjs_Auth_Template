@@ -1,19 +1,79 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsDateString, IsBoolean, IsUrl } from 'class-validator';
 
 export class UpdateUserDto {
-  @IsString()
   @IsOptional()
-  fname?: string;
+  @IsString()
+  name?: string;
 
-  @IsString()
   @IsOptional()
-  lname?: string;
+  @IsEmail()
+  email?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  password?: string;
+
+  @IsOptional()
+  @IsString()
   phone?: string;
 
-  @IsString()
   @IsOptional()
-  password?: string;
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: Date;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsUrl()
+  profileImageUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isEmailVerified?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  lastLogin?: Date;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsUrl()
+  facebookUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  twitterUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  linkedInUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  websiteUrl?: string;
 }

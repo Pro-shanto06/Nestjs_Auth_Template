@@ -1,28 +1,70 @@
-import { Schema, Document } from 'mongoose';
-import * as bcrypt from 'bcryptjs';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+import { UserRole } from '../enums/role.enum';
 
-export interface User extends Document {
-  fname: string;
-  lname: string;
+@Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
+export class User extends Document {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true, unique: true })
   email: string;
-  phone: string;
+
+  @Prop()
   password: string;
+
+  @Prop()
+  phone?: string;
+
+  @Prop()
+  address?: string;
+
+  @Prop()
+  city?: string;
+
+  @Prop()
+  state?: string;
+
+  @Prop()
+  country?: string;
+
+  @Prop()
+  postalCode?: string;
+
+  @Prop()
+  dateOfBirth?: Date;
+
+  @Prop({ default: UserRole.USER })
+  role: UserRole;
+
+  @Prop()
+  profileImageUrl?: string;
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
+  @Prop()
+  lastLogin?: Date;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  // Social links
+  @Prop()
+  facebookUrl?: string;
+
+  @Prop()
+  twitterUrl?: string;
+
+  @Prop()
+  linkedInUrl?: string;
+
+  @Prop()
+  websiteUrl?: string;
+
+  @Prop()
+  refreshToken?: string; 
 }
 
-const userSchema = new Schema<User>({
-  fname: { type: String, required: true },
-  lname: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true }
-});
-
-userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  }
-  next();
-});
-
-export const UserSchema = userSchema;
+export type UserDocument = User & Document;
+export const UserSchema = SchemaFactory.createForClass(User);
