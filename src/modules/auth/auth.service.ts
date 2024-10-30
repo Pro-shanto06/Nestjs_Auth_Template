@@ -4,7 +4,7 @@ import { UserService } from '../user/user.service';
 import { User } from '../user/schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '../user/dto/create-user.dto';
-import { LoginUserDto } from './dto/login_user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { MailService } from '../mail/mail.service';
 import { VerifySignupDto } from './dto/verify-signup.dto';
 import { generateTokens } from 'src/common/helpers/token.helper';
@@ -28,23 +28,37 @@ export class AuthService {
 
   async inviteUser(inviteUserDto: InviteUserDto): Promise<{ message: string }> {
     const { email, role } = inviteUserDto;
+
+    const existingUser = await this.userService.findByEmail(email);
+    if (existingUser) {
+      throw ExceptionHelper.getInstance().defaultError(
+        'User with this email already exists.',
+        'user_already_exists',
+        HttpStatus.CONFLICT,
+      );
+    }
     const token = this.jwtService.sign({ email, role }, { expiresIn: '1d' });
-
     await this.mailService.sendInvitationEmail(email, token);
-
     return { message: 'Invitation sent successfully.' };
   }
 
-  async signup(
-    createUserDto: CreateUserDto,
-    invitationToken?: string,
-  ): Promise<{ message: string }> {
+  async signup(createUserDto: CreateUserDto, invitationToken?: string) {
     let role = 'user';
 
     if (invitationToken) {
       try {
         const payload = this.jwtService.verify(invitationToken);
         role = payload.role;
+        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+        const savedUser = await this.userService.create({
+          ...createUserDto,
+          password: hashedPassword,
+          isEmailVerified: true,
+          role,
+        });
+
+        return savedUser;
       } catch (error) {
         ExceptionHelper.getInstance().defaultError(
           'Invalid or expired invitation token',
@@ -60,7 +74,7 @@ export class AuthService {
     if (existingUser) {
       ExceptionHelper.getInstance().defaultError(
         'Email is already in use.',
-        'Email_is_already_in_use.',
+        'Email_is_already_in_use',
         HttpStatus.CONFLICT,
       );
     }
@@ -78,7 +92,6 @@ export class AuthService {
       createUserDto.email,
       verificationCode,
     );
-
     return { message: 'Verification code sent to email.' };
   }
 
@@ -172,19 +185,14 @@ export class AuthService {
     return { access_token: accessToken, refresh_token: refreshToken };
   }
 
-  async refreshTokens(userId: string, refreshToken: string) {
+  async refreshTokens(userId: string) {
     const user = await this.userService.findById(userId);
-    if (!user || user.refreshToken !== refreshToken) {
-      ExceptionHelper.getInstance().defaultError(
-        'Invalid refresh token',
-        'invalid_refresh_token',
-        HttpStatus.UNAUTHORIZED,
-      );
-    }
 
-    const payload = { email: user.email, sub: user._id, refreshToken };
-    const newAccessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const newRefreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      generateTokens(this.jwtService, {
+        email: user.email,
+        sub: user._id,
+      });
 
     user.refreshToken = newRefreshToken;
     await user.save();
@@ -221,14 +229,20 @@ export class AuthService {
     return { message: 'Password reset link sent to your email.' };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const payload = this.jwtService.verify(resetPasswordDto.token);
+  async resetPassword(token: string, resetPasswordDto: ResetPasswordDto) {
+    const payload = this.jwtService.verify(token);
     const user = await this.userService.findByEmail(payload.email);
+    if (!user) {
+      ExceptionHelper.getInstance().defaultError(
+        'User not found.',
+        'user_not_found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
     const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
     user.password = hashedPassword;
     await user.save();
-
     return { message: 'Password reset successfully.' };
   }
 }

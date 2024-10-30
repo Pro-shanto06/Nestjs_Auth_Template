@@ -6,10 +6,11 @@ import {
   Req,
   Get,
   Res,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
-import { LoginUserDto } from './dto/login_user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { User } from '../user/schemas/user.schema';
 import { VerifySignupDto } from './dto/verify-signup.dto';
 import { RefreshTokenGuard } from './guards/refresh-auth.guard';
@@ -28,10 +29,10 @@ export class AuthController {
     return this.authService.inviteUser(inviteUserDto);
   }
 
-  @Post('signup')
+  @Post('signup/:invitationToken?')
   async signup(
     @Body() createUserDto: CreateUserDto,
-    @Body('invitationToken') invitationToken?: string,
+    @Param('invitationToken') invitationToken?: string,
   ) {
     return this.authService.signup(createUserDto, invitationToken);
   }
@@ -50,7 +51,7 @@ export class AuthController {
   @Post('refresh-token')
   async refreshTokens(@Req() req) {
     const user = req.user;
-    return this.authService.refreshTokens(user._id, user.refreshToken);
+    return this.authService.refreshTokens(user._id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -78,8 +79,11 @@ export class AuthController {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  @Post('reset-password')
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+  @Post('reset-password/:token')
+  async resetPassword(
+    @Param('token') token: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(token, resetPasswordDto);
   }
 }
