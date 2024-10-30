@@ -70,7 +70,7 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res) {
     const response = await this.authService.googleLogin(req.user);
     return res.redirect(
-      `http://localhost:3000?access_token=${response.access_token}&refresh_token=${response.refresh_token}`,
+      `http://nestjs-auth-lel4.onrender.com?access_token=${response.access_token}&refresh_token=${response.refresh_token}`,
     );
   }
 
