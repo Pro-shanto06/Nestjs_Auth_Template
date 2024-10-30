@@ -30,4 +30,14 @@ export class MailService {
       text: `You requested a password reset. Click the link to reset your password: ${resetUrl}. If you didn’t request this, please ignore this email.`,
     });
   }
+
+  async sendInvitationEmail(email: string, token: string) {
+    const invitationUrl = `http://localhost:3000/auth/signup?token=${token}`;
+    await this.transporter.sendMail({
+      from: appConfig.emailUser,
+      to: email,
+      subject: 'You Are Invited!',
+      text: `You have been invited to join our platform. Click the link to sign up: ${invitationUrl}. If you did not expect this invitation, please ignore this email.`,
+    });
+  }
 }

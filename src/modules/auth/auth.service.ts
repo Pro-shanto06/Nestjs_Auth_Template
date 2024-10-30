@@ -11,12 +11,13 @@ import { generateTokens } from 'src/common/helpers/token.helper';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ExceptionHelper } from '../../common/helpers/exception.helper';
+import { InviteUserDto } from './dto/invite-user.dto';
 
 @Injectable()
 export class AuthService {
   private unverifiedUsers = new Map<
     string,
-    { userDto: CreateUserDto; code: string }
+    { userDto: CreateUserDto; code: string; role: string }
   >();
 
   constructor(
@@ -25,14 +26,41 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  async signup(createUserDto: CreateUserDto): Promise<{ message: string }> {
+  async inviteUser(inviteUserDto: InviteUserDto): Promise<{ message: string }> {
+    const { email, role } = inviteUserDto;
+    const token = this.jwtService.sign({ email, role }, { expiresIn: '1d' });
+
+    await this.mailService.sendInvitationEmail(email, token);
+
+    return { message: 'Invitation sent successfully.' };
+  }
+
+  async signup(
+    createUserDto: CreateUserDto,
+    invitationToken?: string,
+  ): Promise<{ message: string }> {
+    let role = 'user';
+
+    if (invitationToken) {
+      try {
+        const payload = this.jwtService.verify(invitationToken);
+        role = payload.role;
+      } catch (error) {
+        ExceptionHelper.getInstance().defaultError(
+          'Invalid or expired invitation token',
+          'Invalid_or_expired_invitation_token',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+    }
+
     const existingUser = await this.userService.findByEmail(
       createUserDto.email,
     );
     if (existingUser) {
       ExceptionHelper.getInstance().defaultError(
         'Email is already in use.',
-        'email_already_in_use',
+        'Email_is_already_in_use.',
         HttpStatus.CONFLICT,
       );
     }
@@ -43,12 +71,14 @@ export class AuthService {
     this.unverifiedUsers.set(createUserDto.email, {
       userDto: createUserDto,
       code: verificationCode,
+      role,
     });
 
     await this.mailService.sendVerificationEmail(
       createUserDto.email,
       verificationCode,
     );
+
     return { message: 'Verification code sent to email.' };
   }
 
@@ -66,12 +96,14 @@ export class AuthService {
       );
     }
 
-    const [email, { userDto }] = userEntry;
+    const [email, { userDto, role }] = userEntry;
     const hashedPassword = await bcrypt.hash(userDto.password, 10);
+
     const savedUser = await this.userService.create({
       ...userDto,
       password: hashedPassword,
       isEmailVerified: true,
+      role,
     });
 
     this.unverifiedUsers.delete(email);
@@ -104,7 +136,7 @@ export class AuthService {
 
     if (!user.isEmailVerified) {
       ExceptionHelper.getInstance().defaultError(
-        'Email is not verified. Please verify your email to log in.',
+        'Email is not verified.',
         'email_not_verified',
         HttpStatus.BAD_REQUEST,
       );

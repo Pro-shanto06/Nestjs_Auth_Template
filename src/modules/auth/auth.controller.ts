@@ -17,14 +17,23 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { InviteUserDto } from './dto/invite-user.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post('invite')
+  async invite(@Body() inviteUserDto: InviteUserDto) {
+    return this.authService.inviteUser(inviteUserDto);
+  }
+
   @Post('signup')
-  async signup(@Body() createUserDto: CreateUserDto) {
-    return this.authService.signup(createUserDto);
+  async signup(
+    @Body() createUserDto: CreateUserDto,
+    @Body('invitationToken') invitationToken?: string,
+  ) {
+    return this.authService.signup(createUserDto, invitationToken);
   }
 
   @Post('verify-signup')
