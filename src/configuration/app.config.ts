@@ -21,7 +21,10 @@ const getAppConfig = (): IConfig => {
   const emailPassword = process.env.EMAIL_PASSWORD;
   const googleClientId = process.env.GOOGLE_CLIENT_ID;
   const googleSecret = process.env.GOOGLE_SECRET;
-  const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL;
+  const googleCallbackUrl =
+  process.env.NODE_ENV === 'production'
+    ? 'https://nestjs-auth-lel4.onrender.com/auth/google/callback'
+    : 'http://localhost:3000/auth/google/callback';
 
 
   if (!port) console.log('PORT must be specified');

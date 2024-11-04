@@ -42,11 +42,6 @@ export class AuthController {
     return this.authService.verifySignup(verifySignupDto);
   }
 
-  @Post('login')
-  async login(@Body() loginUserDto: LoginUserDto) {
-    return this.authService.login(loginUserDto);
-  }
-
   @UseGuards(RefreshTokenGuard)
   @Post('refresh-token')
   async refreshTokens(@Req() req) {
@@ -61,6 +56,11 @@ export class AuthController {
     return this.authService.logout(user._id);
   }
 
+  @Post('login')
+  async login(@Body() loginUserDto: LoginUserDto) {
+    return this.authService.login(loginUserDto);
+  }
+
   @UseGuards(GoogleAuthGuard)
   @Get('google/login')
   async googleAuth() {}
@@ -70,7 +70,7 @@ export class AuthController {
   async googleAuthRedirect(@Req() req, @Res() res) {
     const response = await this.authService.googleLogin(req.user);
     return res.redirect(
-      `http://nestjs-auth-lel4.onrender.com?access_token=${response.access_token}&refresh_token=${response.refresh_token}`,
+      `http://localhost:5173/?access_token=${response.access_token}&refresh_token=${response.refresh_token}`,
     );
   }
 
